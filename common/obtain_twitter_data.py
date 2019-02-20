@@ -8,7 +8,7 @@ import tweepy
 tweet_time_format = "%a %b %d %H:%M:%S +0000 %Y"
 
 cnfg = configparser.ConfigParser()
-cnfg.read("twitdata.ini")
+cnfg.read("../data/twitdata.ini")
 
 error_fn = "twitter_errors.txt"
 if not os.path.isfile(error_fn):
@@ -152,7 +152,7 @@ def get_user_timeline(uid):
 
 def get_timelines():
     user_ids = set()
-    with open("data/user_ids.txt", encoding="utf-8") as doc:
+    with open("../data/user_ids.txt", encoding="utf-8") as doc:
         for line in doc.readlines():
             uid = line.strip("\n")
             user_ids.add(int(uid))
@@ -186,7 +186,7 @@ def get_status(tid):
 
 
 def get_tweets():
-    with open("data/tweets_to_obtain.txt") as doc:
+    with open("../data/tweets_to_obtain.txt") as doc:
         for line in doc.readlines():
             cols = line.strip("\n").split("\t")
             status = get_status(int(cols[0]))
@@ -195,7 +195,7 @@ def get_tweets():
                 j = filter_tweet(clean_tweet(status._json))
                 record = build_record(j, labels)
                 tweet_to_db(db.tweets, record)
-                with open("data/user_ids.txt", "a", encoding="utf-8") as out:
+                with open("../data/user_ids.txt", "a", encoding="utf-8") as out:
                     out.write("{uid}\n".format(uid=j["user"]["id_str"]))
 
 
