@@ -8,6 +8,8 @@ ipykernel = "*"
 pymongo = "*"
 pandas = "*"
 matplotlib = "*"
+requests = "*"
+xlrd = "*"
 
 [dev-packages]
 
