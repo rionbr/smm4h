@@ -68,9 +68,17 @@ class Sentences(object):
     def __init__(self, text):
         self.text = self.text_pp = text
 
-    def preprocess(self, lower=True):
+    def preprocess(self, lower=True, remove_hash=True, remove_mentions=True, remove_url=True, remove_newline=True):
         if lower:
             self.text_pp = self.text_pp.lower()
+        if remove_hash:
+            self.text_pp = self.text_pp.replace('#', '')
+        if remove_mentions:
+            self.text_pp = re.sub('@[a-z0-9_]+', '', self.text_pp)
+        if remove_url:
+            self.text_pp = re.sub(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", '', self.text_pp)
+        if remove_newline:
+            self.text_pp = self.text_pp.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
         return self
 
     def tokenize(self):
@@ -133,7 +141,7 @@ class TermDictionaryParser(object):
         root = self.tokens.get_node('root')
         for id, token in tokens:
 
-            token = token.lower()
+            # token = token.lower()
             # wordlist = re.findall(re_tokenizer, token, re.UNICODE)
             wordlist = token.split()  # split on white space
 
