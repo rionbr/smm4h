@@ -103,10 +103,10 @@ if __name__ == '__main__':
         obj['post_text'] = t['text']
         obj['post_retweeted'] = t['retweeted']
         obj['post_coordinates'] = t['coordinates']
-        obj['post_hashtags'] = t['entities']['hashtags']
-        obj['post_symbols'] = t['entities']['symbols']
-        obj['post_urls'] = t['entities']['urls']
-        obj['post_user_mentions'] = t['entities']['user_mentions']
+        obj['post_hashtags'] = [x['text'] for x in t['entities']['hashtags']]
+        obj['post_symbols'] = [x['text'] for x in t['entities']['symbols']]
+        obj['post_urls'] = [x['expanded_url'] for x in t['entities']['urls']]
+        obj['post_user_mentions'] = [x['id_str'] for x in t['entities']['user_mentions']]
         obj['post_place'] = t['place']
 
         # POS Tagging (Parts-Of-Speech)
