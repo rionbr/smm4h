@@ -16,19 +16,12 @@ pd.set_option('display.width', 1000)
 import nltk
 import time
 from termdictparser import Sentences, TermDictionaryParser
+import utils
 
 if __name__ == '__main__':
 
     # Load Positive/Negative sets for Task 1
-    print('--- Loading Class ---')
-    ldfC = []
-    for i in [1, 2, 3]:
-        file = '../data/task1/training_set_{:d}_ids.txt'.format(i)
-        print(file)
-        dft = pd.read_csv(file, sep='\t', index_col=0, names=['tweet_id', 'user_id', 'category'])
-        ldfC.append(dft)
-    dfC = pd.concat(ldfC, axis=0)
-    # to dictionary of id:class for fast access
+    dfC = utils.load_task1_classes()
     dict_category = dfC['category'].to_dict()
 
     # Connect to Mongo
