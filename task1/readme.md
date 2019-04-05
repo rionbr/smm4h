@@ -15,10 +15,10 @@ Description of task 1 files.
 - [x] user.log(number_of_tweets)
 - [x] user.number_of_positive_cases : the number of tweets that were deemed positive in the timeline
 - [x] user.ratio_number_of_positive_cases
-- [ ] user.number_of_drugs
-- [ ] user.number_of_medical_terms
-- [ ] user.number_of_natural_products
-- [ ] user.number_of_cannabis
+- [x] user.number_of_drugs
+- [x] user.number_of_medical_terms
+- [x] user.number_of_natural_products
+- [x] user.number_of_cannabis
 
 ### Temporal
 - [x] temp.hour_of_day
@@ -30,16 +30,15 @@ Description of task 1 files.
 - [x] text.lenght_of_text
 - [x] text.number_of_words
 - [x] (vector)text.pos_vector : a vector representing the distribution of POS tagging.
-- [ ] (vector)text.sentiment_(sentiment-tool): a vector representing different sentiment tools
-- [ ] text.tfidf_1-grams
-- [ ] text.tfidf_2-grams
-- [ ] text.tfidf_3-grams : (if possbile)
+- [x] (vector)text.sentiment_(sentiment-tool): a vector representing different sentiment tools
+- [x] text.tfidf_1-grams
+- [x] text.tfidf_2-grams
+- [x] text.tfidf_3-grams : (if possbile)
 
 ### Dictionary based
-- [ ] dict.number_of_drugs
-- [ ] dict.number_of_medical_terms
-- [ ] dict.number_of_natural_products
-- [ ] dict.number_of_cannabis
-- [ ] dict.tfidf_1-grams
-- [ ] dict.tfidf_2-grams
-- [ ] dict.tfids_3-grams : (if possible)
+- [x] dict.number_of_drugs
+- [x] dict.number_of_medical_terms
+- [x] dict.number_of_natural_products : includes Cannabis
+- [x] dict.tfidf_1-grams
+- [x] dict.tfidf_2-grams
+- [x] dict.tfids_3-grams : (if possible)

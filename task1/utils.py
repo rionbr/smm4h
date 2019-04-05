@@ -1,7 +1,10 @@
+import sys
+sys.path.insert(0, '../include')
+
 from datetime import date, datetime
 import pandas as pd
-from termdictparser import Sentences, TermDictionaryParser
-from mongo_helper_functions import connectMongo, query, project, limit
+from termdictparser import Sentence, TermDictionaryParser
+from mongo_helper_functions import connectMongo, match, query, project, limit
 
 
 def load_task1_classes():
@@ -13,7 +16,8 @@ def load_task1_classes():
         dft = pd.read_csv(file, sep='\t', names=['tweet_id', 'user_id', 'category'])
         ldfC.append(dft)
     dfC = pd.concat(ldfC, axis=0)
-    dfC['tweet_id_str'] = dfC['tweet_id'].astype('string')
+    dfC['tweet_id_str'] = dfC['tweet_id'].astype(str)
+    dfC['user_id_str'] = dfC['user_id'].astype(str)
     dfC.set_index('tweet_id_str', inplace=True)
     return dfC
 
@@ -21,41 +25,31 @@ def load_task1_classes():
 class DictionaryParser(object):
     """docstring for DictionaryParser."""
 
-    def __init__(self, db):
-        # Load Dictionary (dict_20180706)
-        print('--- Loading dict_20180706 Dict ---')
-        pipeline = project(_id=1, token=1, parent=1, type=1)
-        # pipeline = limit(n=10, pipeline=pipeline)  # debug
-        dfD = query(collection=db['dict_20180706'], pipeline=pipeline)
+    def __init__(self, db, type):
+        self.db = db
+        self.type = type
+
+        # Build Vocabulary
+        pipeline = match(type=self.type)
+        pipeline = project(pipeline=pipeline, _id=1, token=1, parent=1, type=1)
+        df = query(collection=self.db['dict_20180706'], pipeline=pipeline)
         # Some tokens have multiple hits (Drug products with multiple compounds)
-        dfDg = dfD.groupby('token').agg({'_id': lambda x: tuple(x)})
-        dfDg = dfDg.reset_index().set_index('_id')
-        dfD = dfD.set_index('_id')
-        self.dict_token = dfD['token'].to_dict()
-        self.dict_parent = dfD['parent'].to_dict()
-        self.dict_type = dfD['type'].to_dict()
+        dfg = df.groupby('token').agg({'_id': lambda x: tuple(x)})
+        dfg = dfg.reset_index()
+        df = df.set_index('_id')
+        self.dict_token = df['token'].to_dict()
+        self.dict_parent = df['parent'].to_dict()
+        self.dict_type = df['type'].to_dict()
 
         # Build Term Parser
         self.tdp = TermDictionaryParser()
-        # Select columns to pass to parser
-        list_tuples = list(dfDg['token'].str.lower().items())
-        # Build Parser Vocabulary
-        self.tdp.build_vocabulary(list_tuples)
 
-    def match(self, text):
-        sentences = Sentences(text).preprocess(lower=True, remove_mentions=True, remove_url=True).tokenize()
-        matches = []
-        sentences = sentences.match_tokens(parser=self.tdp)
-        if sentences.has_match():
-            for match in sentences.get_unique_matches():
-                for mid in match.id:
-                    matches.append({
-                        'id': mid,
-                        'token': self.dict_token[mid],
-                        'parent': self.dict_parent[mid],
-                        'type': self.dict_type[mid]
-                    })
-        return matches
+        def build_sentences(row):
+            return Sentence(id=row['_id'], text=row['token']).preprocess(lower=True).re_tokenize(re=None).lemmatize(pos='v')
+
+        dfg['sentences'] = dfg.apply(build_sentences, axis=1)
+
+        self.tdp.build_vocabulary(dfg['sentences'].values)
 
 
 Y = 2000  # dummy leap year to allow input X-02-29 (leap day)
@@ -68,7 +62,7 @@ seasons = [('winter', (date(Y, 1, 1), date(Y, 3, 20))),
 
 def calc_season_from_datetime(now):
     """
-    Retrieved the season (northern hemisphere) based on a datetime.
+    Retrieved the season (for northern hemisphere) based on a datetime.
     """
     if isinstance(now, datetime):
         now = now.date()
@@ -80,6 +74,9 @@ def calc_season_from_datetime(now):
 def count_pattern_in_list(lst, seq):
     """
     Counts a specific pattern of objects within a list.
+
+    Usage:
+        count_pattern_in_list([1,0,1,2,0,1], [0,1]) = 2
     """
     count = 0
     len_seq = len(seq)
@@ -88,3 +85,17 @@ def count_pattern_in_list(lst, seq):
         if lst[i:i + len_seq] == seq:
             count += 1
     return count
+
+
+if __name__ == '__main__':
+
+    db = connectMongo(db_name='smm4h', host='angst.soic.indiana.edu')
+
+    DPDrug = DictionaryParser(db=db, type='Drug')
+    print(DPDrug)
+
+    s1 = u"I am having FLuoXeTiNe high ADHD, ADHD! #LINHAÇA! losing weight but not because I'm doing a weight lossing diet, linhaça. It's my Nerve block back again with FLuoxetine. Perhaps I need to take some multi vitamins. huh nerve. #first. #second."
+    s1 = Sentence(s1).preprocess(lower=True, remove_hash=True).re_tokenize(re=None).lemmatize(pos='v').match_tokens(parser=DPDrug.tdp)
+
+    for match in s1.matches:
+        print(match)

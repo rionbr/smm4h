@@ -23,7 +23,8 @@ except ImportError:
     import re
 else:
     re.set_fallback_notification(re.FALLBACK_WARNING)
-from nltk.tokenize import TweetTokenizer, sent_tokenize
+from nltk.tokenize import PunktSentenceTokenizer, TweetTokenizer, sent_tokenize
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 __author__ = """\n""".join([
     'Rion Brattig Correia <rionbr@gmail.com>',
@@ -32,20 +33,6 @@ __author__ = """\n""".join([
 
 __all__ = ['TermDictionaryParser']
 #
-
-
-def preprocess(sentence):
-    """ A simple function to handle preprocessing of a sentence"""
-    # Lowercase sentence
-    sentence = sentence.lower()
-    # Remove @ mentions
-    sentence = re.sub('@[a-z0-9_]+', '', sentence)
-    # Remove URLs
-    sentence = re.sub(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", '', sentence)
-    # Remove NewLines
-    sentence = sentence.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
-    return sentence
-
 
 class Match(object):
     """
@@ -61,14 +48,15 @@ class Match(object):
         return u"<Match(id=%s, tokens=%s>" % (self.id, self.tokens)
 
 
-class Sentences(object):
+class Sentence(object):
     """
 
     """
-    def __init__(self, text):
+    def __init__(self, text, id=None):
+        self.id = id  # possible multiple ids
         self.text = self.text_pp = text
 
-    def preprocess(self, lower=True, remove_hash=True, remove_mentions=True, remove_url=True, remove_newline=True):
+    def preprocess(self, lower=False, remove_hash=False, remove_mentions=False, remove_url=False, remove_newline=False):
         if lower:
             self.text_pp = self.text_pp.lower()
         if remove_hash:
@@ -81,9 +69,28 @@ class Sentences(object):
             self.text_pp = self.text_pp.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
         return self
 
-    def tokenize(self):
-        tokenizer_words = TweetTokenizer()
-        self.tokens_sentences = [tokenizer_words.tokenize(t) for t in sent_tokenize(self.text_pp)]
+    def re_tokenize(self, re=r"[a-zA-Z0-9(-+.)']+"):
+        """
+        Args:
+            re (string): Regular Expression string used to separates the tokens. Default: `[\w']+`
+
+        """
+        if re is None:
+            self.tokens_sentences = [self.text_pp.split()]
+        else:
+            self.tokens_sentences = re.findall(re, self.text_pp, re.UNICODE)
+        return self
+
+    def tokenize(self, tokenizer=TweetTokenizer()):
+        self.tokens_sentences = [tokenizer.tokenize(t) for t in sent_tokenize(self.text_pp)]
+        return self
+
+    def stemm(self, stemmer=PorterStemmer(), *args, **kwargs):
+        self.tokens_sentences = [[stemmer.stem(token, *args, **kwargs) for token in tokens] for tokens in self.tokens_sentences]
+        return self
+
+    def lemmatize(self, lemmatizer=WordNetLemmatizer(), *args, **kwargs):
+        self.tokens_sentences = [[lemmatizer.lemmatize(token, *args, **kwargs) for token in tokens] for tokens in self.tokens_sentences]
         return self
 
     def match_tokens(self, parser=None):
@@ -111,7 +118,7 @@ class Sentences(object):
             return self.text
 
     def __str__(self):
-        return u"<Sentencess(%s)>" % len(self.sentence)
+        return "<Sentence(id={id:} text={text:})>".format(id=self.id,text=self.text)
 
 
 class TermDictionaryParser(object):
@@ -127,23 +134,20 @@ class TermDictionaryParser(object):
     def __str__(self):
         return "<TermDicionatyParser()>"
 
-    def build_vocabulary(self, tokens=[], re_tokenizer=r"[a-zA-Z0-9(-+.)']+"):
+    def build_vocabulary(self, sentences=[]):
         """ Given a list of terms, builds the Vocabulary.
 
         Args:
-            terms (list): The list of terms to compose the vocabulary
-            re_tokenizer (string): Regular Expression string used to separates the tokens. Default: `[\w']+`
+            sentences (list): A list of Sentence objects
 
         Return:
             Nothing
         """
         wtree = self.tokens
         root = self.tokens.get_node('root')
-        for id, token in tokens:
-
-            # token = token.lower()
-            # wordlist = re.findall(re_tokenizer, token, re.UNICODE)
-            wordlist = token.split()  # split on white space
+        for sentence in sentences:
+            id = sentence.id
+            wordlist = [token for tokens in sentence.tokens_sentences for token in tokens]
 
             nodes = list()
             term_size = len(wordlist)
@@ -278,10 +282,12 @@ class WordNodeData(object):
 #
 if __name__ == '__main__':
 
+    import pandas as pd
     tdp = TermDictionaryParser()
 
     print('--- Build Vocabulary ---')
-    terms = [
+    dfV = pd.DataFrame(
+    [
         (1, u'asthma/bronchitis'),
         (2, u'linhaça'),  # unicode characteç'
         (u'D03', u'ADHD'),  # acym
@@ -290,7 +296,7 @@ if __name__ == '__main__':
         (3, u'weight loss diet'),
         (4, u'weight gain diet'),
         (3, u'losing weight'),
-        (3, u'weight loss'),
+        (3, u'losing weight'),
         (10, u'brain cancer'),
         (10, u'brain cancer carcinoma'),
         (10, u'brain cancer carcinoma twice'),
@@ -303,14 +309,22 @@ if __name__ == '__main__':
         (53, u'second third'),
         (54, u"first second third fourth"),
         ((61, 62, 63), u"Multi Vitamins"),
-    ]
-    tdp.build_vocabulary(terms)
+    ], columns=['id', 'text'])
+
+    def build_sentences(row):
+        return Sentence(id=row['id'], text=row['text']).preprocess(lower=True).re_tokenize(re=None).lemmatize(pos='v')
+
+    dfV['sentences'] = dfV.apply(build_sentences, axis=1)
+    print(dfV)
+
+    tdp.build_vocabulary(dfV['sentences'].values)
     print(tdp.tokens.show(data_property=None))
 
     print('--- Sequence (1) Extraction ---')
-    s1 = u"I am having FLuoXeTiNe high ADHD, ADHD! #LINHAÇA!weight loss but not because I'm doing a weight loss diet, linhaça. It's my Nerve block back again with FLuoxetine. Perhaps I need to take some multi vitamins. huh nerve. #first. #second."
+    s1 = u"I am having FLuoXeTiNe high ADHD, ADHD! #LINHAÇA! losing weight but not because I'm doing a weight lossing diet, linhaça. It's my Nerve block back again with FLuoxetine. Perhaps I need to take some multi vitamins. huh nerve. #first. #second."
     # s1 = u"Eu decidi #linhaça o meu amor com todo meu #weight #loss. #first."
-    s1 = Sentences(s1).preprocess(lower=True).tokenize().match_tokens(parser=tdp)
+    s1 = Sentence(s1).preprocess(lower=True, remove_hash=True).re_tokenize(re=None).lemmatize(pos='v').match_tokens(parser=tdp)
+    print(s1.tokens_sentences)
     print('S1 Has Matchs: {:b}'.format(s1.has_match()))
     print('S1 (All) Matches:')
     for match in s1.get_matches():
