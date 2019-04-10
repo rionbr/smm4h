@@ -8,6 +8,9 @@ ipykernel = "*"
 pymongo = "*"
 pandas = "*"
 matplotlib = "*"
+sklearn = "*"
+stastmodels = "*"
+statsmodels = "*"
 
 [dev-packages]
 
