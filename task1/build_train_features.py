@@ -47,7 +47,7 @@ if __name__ == '__main__':
     print('> Loading Tweets')
     pipeline = match(pipeline=[], task_one=True)
     pipeline = project(pipeline=pipeline, _id=1, task_one=1, tweet=1, datetime=1)
-    pipeline = limit(n=None, pipeline=pipeline)
+    pipeline = limit(n=100, pipeline=pipeline)
     dfP = query(collection=db['tweets'], pipeline=pipeline)
     dfP.set_index('_id', inplace=True, drop=False)
 
@@ -170,15 +170,15 @@ if __name__ == '__main__':
         pipeline = [{'$match': {'tweet.user.id_str': _id}}]
         # pipeline = [{'$match': {'tweet.user.id_str': '11927552'}}]
         pipeline = project(pipeline=pipeline, _id=1, task_one=1, tweet=1, datetime=1)
-        pipeline = limit(n=None, pipeline=pipeline)
+        pipeline = limit(n=100, pipeline=pipeline)
         dfT = query(collection=db['timelines'], pipeline=pipeline)
-        dfT.set_index('_id', inplace=True, drop=False)
 
-        if len(dfT) == 0:
-            dfT = pd.DataFrame({'tweet.full_text': ['']})
-
-        dftexttimeline = dfT['tweet.full_text'].apply(timeline_textual_features)
-        return dftexttimeline.sum(axis='index')
+        if len(dfT) > 0:
+            dfT.set_index('_id', inplace=True, drop=False)
+            dftexttimeline = dfT['tweet.full_text'].apply(timeline_textual_features)
+            return dftexttimeline.sum(axis='index')
+        else:
+            return pd.Series()
 
     dftime = dfP['tweet.user.id_str'].apply(timeline_features)
 
