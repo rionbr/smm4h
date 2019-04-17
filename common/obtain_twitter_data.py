@@ -150,9 +150,10 @@ def get_user_timeline(uid):
             error.write("{r}\t{c}\tuser_timeline\t{u}\n".format(u=uid, c=e.api_code, r=e.response))
 
 
-def get_timelines():
+def get_timelines(training=True):
+    ufn = "../data/user_ids.txt" if training else "../data/task1/testDataST1_user_ids.txt"
     user_ids = set()
-    with open("../data/user_ids.txt", encoding="utf-8") as doc:
+    with open(ufn, encoding="utf-8") as doc:
         for line in doc.readlines():
             uid = line.strip("\n")
             user_ids.add(int(uid))
@@ -185,8 +186,10 @@ def get_status(tid):
         return None
 
 
-def get_tweets():
-    with open("../data/tweets_to_obtain.txt") as doc:
+def get_tweets(training=True):
+    fn = "../data/tweets_to_obtain.txt" if training else "../data/task1/testDataST1_participants.tsv"
+    ufn = "../data/user_ids.txt" if training else "../data/task1/testDataST1_user_ids.txt"
+    with open(fn) as doc:
         for line in doc.readlines():
             cols = line.strip("\n").split("\t")
             status = get_status(int(cols[0]))
@@ -195,14 +198,14 @@ def get_tweets():
                 j = filter_tweet(clean_tweet(status._json))
                 record = build_record(j, labels)
                 tweet_to_db(db.tweets, record)
-                with open("../data/user_ids.txt", "a", encoding="utf-8") as out:
+                with open(ufn, "a", encoding="utf-8") as out:
                     out.write("{uid}\n".format(uid=j["user"]["id_str"]))
 
 
 def main():
-    get_tweets()
+    get_tweets(training=False)
     print("Started processing all user timelines")
-    get_timelines()
+    get_timelines(training=False)
 
 
 if __name__ == '__main__':
