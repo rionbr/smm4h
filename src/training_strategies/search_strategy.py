@@ -12,7 +12,6 @@ from sklearn.model_selection import RandomizedSearchCV
 from src.training_strategies.training_strategy import TrainingStrategy
 
 
-
 class GridSearchStrategy(six.with_metaclass(ABCMeta, TrainingStrategy)):
 
     def __init__(self, pipeline, cross_validation):

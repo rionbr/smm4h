@@ -11,6 +11,7 @@ matplotlib = "*"
 sklearn = "*"
 stastmodels = "*"
 statsmodels = "*"
+pmlb = "*"
 
 [dev-packages]
 
