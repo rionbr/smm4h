@@ -3,13 +3,13 @@
 # Date: April 03, 2019
 #
 # Description:
-# Build features and saves them on Mongo Collection.
+# Build post features and saves them on Mongo Collection.
 #
 #
 import sys
 sys.path.insert(0, '../include')
 sys.path.insert(0, '../')
-from mongo_helper_functions import connectMongo, match, query, project, limit, prepareBulkUpdate, updateCollectionFromDataFrame
+from mongo_helper_functions import connectMongo, match, query, project, limit
 import numpy as np
 import pandas as pd
 pd.set_option('display.max_rows', 100)
@@ -47,24 +47,24 @@ if __name__ == '__main__':
     print('> Loading Tweets')
     pipeline = match(pipeline=[], task_one=True)
     pipeline = project(pipeline=pipeline, _id=1, task_one=1, tweet=1, datetime=1)
-    pipeline = limit(n=100, pipeline=pipeline)
+    pipeline = limit(n=None, pipeline=pipeline)
     dfP = query(collection=db['tweets'], pipeline=pipeline)
     dfP.set_index('_id', inplace=True, drop=False)
 
-    # Results
-    dfI = pd.DataFrame(index=dfP.index.values)
+    # Results (remember to keep '_id' also a column for the Mongo Insert)
+    dfI = pd.DataFrame({'_id': dfP.index.values}, index=dfP.index.values)
 
     # Class
     dfI['y'] = dfI.index.map(lambda x: dict_category[x])
 
     # User Features
     dfI['user_number_friends'] = dfP['tweet.user.friends_count']
-    dfI['user_log(number_friends)'] = np.log(dfP['tweet.user.friends_count'])
+    dfI['user_log(number_friends)'] = np.log(dfP['tweet.user.friends_count'] + 1)
     dfI['user_number_followers'] = dfP['tweet.user.followers_count']
-    dfI['user_log(number_followers)'] = np.log(dfP['tweet.user.followers_count'])
+    dfI['user_log(number_followers)'] = np.log(dfP['tweet.user.followers_count'] + 1)
     dfI['user_ratio_friends_followers'] = dfP['tweet.user.friends_count'] / dfP['tweet.user.followers_count']
     dfI['user_number_tweets'] = dfP['tweet.user.statuses_count']
-    dfI['user_log(number_tweets)'] = np.log(dfP['tweet.user.statuses_count'])
+    dfI['user_log(number_tweets)'] = np.log(dfP['tweet.user.statuses_count'] + 1)
 
     def calc_positive_cases(_id):
         if dict_number_of_positive_cases.get(_id) is not None:
@@ -86,8 +86,7 @@ if __name__ == '__main__':
         sS = sS[sS > 0]  # Remove Zeros
         return sS
 
-    dfS = dfP['tweet.text'].apply(sentiment_parse_tweet)
-
+    dfsent = dfP['tweet.text'].apply(sentiment_parse_tweet)
 
     # Textual Features
     def tweet_textual_features(text):
@@ -98,7 +97,7 @@ if __name__ == '__main__':
         counted_tags = Counter(flat_tags)
         # Count POS tags
         sT = pd.Series(counted_tags, index=['text_number_of_({:s})'.format(tag) for tag in ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', 'X', 'pct']]).fillna(0)
-        sT = sT[sT>0] # Remove all zeros
+        sT = sT[sT > 0] # Remove all zeros
 
         # Match tokens to dictionary
         matches_drug = sentence_obj.match_tokens(DPDrug.tdp).get_matches()
@@ -143,49 +142,10 @@ if __name__ == '__main__':
     tfidf_feature_names = ['post_tfidf_parent_(' + name + ')' for name in tfidf.get_feature_names()]
     dftfidf_parent = pd.SparseDataFrame(X, columns=tfidf_feature_names).set_index(dfP['_id'].values)
 
-    # Timeline Features
-    print('> Timeline features')
-
-    def timeline_textual_features(text):
-        sentence_obj = Sentence(text).preprocess(lower=True, remove_mentions=True, remove_url=True).tokenize()
-
-        # Match tokens to dictionary
-        matches_drug = sentence_obj.match_tokens(DPDrug.tdp).get_matches()
-        matches_medicalterms = sentence_obj.match_tokens(DPMedTerm.tdp).get_matches()
-        matches_naturalproducts = sentence_obj.match_tokens(DPNatProd.tdp).get_matches()
-
-        sR = pd.Series({
-            'timeline_length_text': len(text),
-            'timeline_number_words': len([s for ss in sentence_obj.tokens_sentences for s in ss]),
-            'timeline_number_(Drugs)': len(matches_drug),
-            'timeline_number_(MedicalTerms)': len(matches_medicalterms),
-            'timeline_number_(NaturalProducts)': len(matches_naturalproducts),
-        })
-        sR = sR[sR > 0]  # Remove Zeros
-        return sR
-
-    def timeline_features(_id):
-        # Load timelines
-        # pipeline = [{'$match': {'tweet.user.id_str': {'$in': dfC['user_id_str'].tolist()}}}]
-        pipeline = [{'$match': {'tweet.user.id_str': _id}}]
-        # pipeline = [{'$match': {'tweet.user.id_str': '11927552'}}]
-        pipeline = project(pipeline=pipeline, _id=1, task_one=1, tweet=1, datetime=1)
-        pipeline = limit(n=100, pipeline=pipeline)
-        dfT = query(collection=db['timelines'], pipeline=pipeline)
-
-        if len(dfT) > 0:
-            dfT.set_index('_id', inplace=True, drop=False)
-            dftexttimeline = dfT['tweet.full_text'].apply(timeline_textual_features)
-            return dftexttimeline.sum(axis='index')
-        else:
-            return pd.Series()
-
-    dftime = dfP['tweet.user.id_str'].apply(timeline_features)
-
     # Final concat
     dfI = pd.concat([
                     dfI,  # Base features
-                    dftime,  # Temporal features
+                    dfsent,  # Sentiment features
                     dftextpost,  # Textual features
                     dftfidf,  # TF-IDF features
                     dftfidf_parent  # TF-IDF features on parent terms
@@ -199,18 +159,6 @@ if __name__ == '__main__':
     db['task_1_train_features'].drop()
 
     print('> Inserting collection')
-    # Converts Df into list of dicts, removing NaNs
+    # Converts DF columns (index is discarded) into list of dicts, removing NaNs
     inserts = [{k: v for k, v in m.items() if pd.notnull(v)} for m in dfI.to_dict(orient='rows')]
     db['task_1_train_features'].insert_many(inserts, ordered=False)
-    """
-    # @Diogo, this didn't work
-    print('> Updating collection')
-    updateCollectionFromDataFrame(
-        collection='task_1_train_features',
-        df=dfI,
-        bulk_func=prepareBulkUpdate,
-        find_field='_id',
-        update_fields=dfI.columns,
-        upsert=True
-    )
-    """

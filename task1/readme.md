@@ -75,3 +75,9 @@ A feature example. Note that fields with NaN are omitted.
   "post_tfidf_parent_(water)" : 0.707107
 }
 ```
+
+## Command to export features to json
+
+```bash
+mongoexport -vv -d smm4h -c task_1_train_features -o task_1_train_features.json
+```
