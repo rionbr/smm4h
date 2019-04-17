@@ -80,7 +80,7 @@ def main():
     X, y = data_load.get_data()
     cross_validation = KFoldCrossValidation()
     pipeline = PandasPipeline(X)
-    learner = RandomForestGridStrategy(pipeline, cross_validation, n_jobs=8)
+    learner = RandomForestRandomizedStrategy(pipeline, cross_validation)
     models = learner.fit(X, y)
     print(models.cv_results_)
 

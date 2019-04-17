@@ -34,8 +34,8 @@ class GridSearchStrategy(six.with_metaclass(ABCMeta, TrainingStrategy)):
 
 class RandomizedSearchStrategy(six.with_metaclass(ABCMeta, TrainingStrategy)):
 
-    def __init__(self, pipeline, cross_validation):
-        super().__init__(pipeline, cross_validation)
+    def __init__(self, pipeline, cross_validation, n_jobs):
+        super().__init__(pipeline, cross_validation, n_jobs)
 
     @abstractmethod
     def get_params(self):

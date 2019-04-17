@@ -47,8 +47,8 @@ class RandomForestGridStrategy(GridSearchStrategy):
 
 class RandomForestRandomizedStrategy(RandomizedSearchStrategy):
 
-    def __init__(self, pipeline, cross_validation):
-        super().__init__(pipeline, cross_validation)
+    def __init__(self, pipeline, cross_validation, n_jobs):
+        super().__init__(pipeline, cross_validation, n_jobs)
 
     # TODO Define the parameter space
     def get_params(self):
