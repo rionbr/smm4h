@@ -34,11 +34,11 @@ class RandomForestGridStrategy(GridSearchStrategy):
         bootstrap = [True, False]
         # Create the random grid
         params = {
-            # 'classifier__n_estimators': n_estimators,
-            # 'classifier__max_features': max_features,
-            # 'classifier__max_depth': max_depth,
-            # 'classifier__min_samples_split': min_samples_split,
-            # 'classifier__min_samples_leaf': min_samples_leaf,
+            'classifier__n_estimators': n_estimators,
+            'classifier__max_features': max_features,
+            'classifier__max_depth': max_depth,
+            'classifier__min_samples_split': min_samples_split,
+            'classifier__min_samples_leaf': min_samples_leaf,
             'classifier__bootstrap': bootstrap
         }
 
