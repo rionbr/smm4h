@@ -13,16 +13,36 @@ from sklearn.pipeline import Pipeline
 from sklearn.pipeline import FeatureUnion
 from sklearn.pipeline import make_pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing.imputation import Imputer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 
+from sklearn.metrics import make_scorer
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+from sklearn.metrics import matthews_corrcoef
+# from sklearn.metrics import pre
+from sklearn.metrics import matthews_corrcoef
+
+
+def matthews_corrcoef_score(y_true, y_pred):
+    return matthews_corrcoef(y_true, y_pred)
+
 
 class TrainingStrategy(six.with_metaclass(ABCMeta)):
 
-    def __init__(self, pipeline, cross_validation):
+    def __init__(self, pipeline, cross_validation, n_jobs):
         self.pipeline = pipeline
         self.cross_validation = cross_validation
+        self.n_jobs = n_jobs
+        self.scoring = {
+            # 'roc_auc_score': make_scorer(roc_auc_score),
+            'f1_score': make_scorer(f1_score),
+            'matthews_corrcoef': make_scorer(matthews_corrcoef, greater_is_better=False)
+        }
 
     @abstractmethod
     def get_classifier(self):
@@ -115,35 +135,46 @@ class TypeSelector(BaseEstimator, TransformerMixin):
 
 class PandasPipeline(CommonPipeline):
 
-    def __init__(self, cols_feature):
+    def __init__(self, X):
         super().__init__()
-        self.cols_feature = cols_feature
+        self.X = X
 
     def get_pipeline(self, classifier):
         # preprocess_pipeline = make_pipeline(
         #     ColumnSelector(columns=self.cols_feature),
         #     ,
         # )
-
-        feature_union = FeatureUnion(transformer_list=[
-            ("numeric_features", make_pipeline(
-                TypeSelector(np.number),
-                Imputer(strategy="median"),
-                StandardScaler()
-            )),
-            ("categorical_features", make_pipeline(
-                TypeSelector("category"),
-                Imputer(strategy="most_frequent"),
-                OneHotEncoder()
-            )),
-            ("boolean_features", make_pipeline(
-                TypeSelector("bool"),
-                Imputer(strategy="most_frequent")
-            ))
-        ])
+        transformer_list = []
+        if float in self.X.dtypes.values:
+            transformer_list.append(
+                ("numeric_features", make_pipeline(
+                    TypeSelector(np.number),
+                    # SimpleImputer(strategy="median"),
+                    Imputer(strategy="median"),
+                    StandardScaler()
+                ))
+            )
+        if "category" in self.X.dtypes.values:
+            transformer_list.append(
+                ("categorical_features", make_pipeline(
+                    TypeSelector("category"),
+                    # SimpleImputer(strategy="most_frequent"),
+                    Imputer(strategy="most_frequent"),
+                    OneHotEncoder()
+                ))
+            )
+        if 'bool' in self.X.dtypes.values:
+            transformer_list.append(
+                ("boolean_features", make_pipeline(
+                    TypeSelector("bool"),
+                    Imputer(strategy="most_frequent")
+                    # SimpleImputer(strategy="most_frequent")
+                ))
+            )
+        feature_union = FeatureUnion(transformer_list=transformer_list)
 
         pipeline = Pipeline(steps=[
-            ('colselector', ColumnSelector(columns=self.cols_feature)),
+            ('colselector', ColumnSelector(columns=self.X.columns)),
             ('featureunion', feature_union),
             ('classifier', classifier)
         ])

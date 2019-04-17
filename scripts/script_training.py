@@ -19,20 +19,20 @@ class DataLoadPickle(object):
         with open(self.filepath, 'rb') as file:
             # file = open(self.filepath, 'rb')
             data = pickle.load(file)
-            data = data.astype(dtype=self.get_dtypes())
-            data = data[self.get_dtypes().keys()]
             assert data is not None, 'data is none'
+            data = data.astype(dtype=self.get_dtypes())
             col_target = 'y'
-            col_features = data.columns != col_target
             data = data.loc[~data[col_target].isna()]
-            # data = data.fillna(0)
             y = data[col_target]
-            X = data.loc[:, col_features]
+            y = y.astype(np.int)
+            col_features = self.get_dtypes().keys()
+            data = data.loc[:, col_features]
+            X = data
+            # data = data.fillna(0)
         return X, y
 
     def get_dtypes(self):
         dtypes = {
-            'y': np.float,
             "user_number_of_friends": np.float,
             # "user_log(number_of_friends)": np.float,
             "user_number_of_followers": np.float,  # np.int,
@@ -78,41 +78,14 @@ def main():
     filepath = 'data/task_1_train_features-110_sample.pickle'
     data_load = DataLoadPickle(filepath)
     X, y = data_load.get_data()
-
-    np.isfinite(X.select_dtypes(include=[np.float]))
-
-
-
-    # from sklearn.ensemble.forest import RandomForestClassifier
-    # clf = RandomForestClassifier()
-    # clf.fit(X, y)
-    cross_validation = KFoldCrossValidation(n_splits=10)
-    pipeline = PandasPipeline(X.columns)
-
-    learner = RandomForestGridStrategy(pipeline, cross_validation)
-
-
-    print(learner.fit(X, y))
+    cross_validation = KFoldCrossValidation()
+    pipeline = PandasPipeline(X)
+    learner = RandomForestGridStrategy(pipeline, cross_validation, n_jobs=8)
+    models = learner.fit(X, y)
+    print(models.cv_results_)
 
 
 if __name__ == '__main__':
-    # data = sys.argv[1]
-    # pass
-    main()
-
-'''
-import pandas as pd
-import numpy as np
-desired_width = 620
-pd.set_option('display.width', desired_width)
-pd.set_option("display.max_columns", 10)
-np.set_printoptions(linewidth=desired_width)
-
-'''
-
-X['temp_hour_of_day'].dtype
-from sklearn.preprocessing import OneHotEncoder
-
-encoder = OneHotEncoder(sparse=False, n_values=20)
-a = encoder.fit_transform(X[['temp_season']])
-a
+    # args = sys.argv[1]
+    # main()
+    pass
