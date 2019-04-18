@@ -22,14 +22,13 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
-from sklearn.metrics import matthews_corrcoef
-# from sklearn.metrics import pre
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 from sklearn.metrics import matthews_corrcoef
 
 
-def matthews_corrcoef_score(y_true, y_pred):
-    return matthews_corrcoef(y_true, y_pred)
+# def matthews_corrcoef_score(y_true, y_pred):
+#     return matthews_corrcoef(y_true, y_pred)
 
 
 class TrainingStrategy(six.with_metaclass(ABCMeta)):
@@ -39,8 +38,10 @@ class TrainingStrategy(six.with_metaclass(ABCMeta)):
         self.cross_validation = cross_validation
         self.n_jobs = n_jobs
         self.scoring = {
-            # 'roc_auc_score': make_scorer(roc_auc_score),
             'f1_score': make_scorer(f1_score),
+            'precision': make_scorer(precision_score),
+            'recall': make_scorer(recall_score),
+            'roc_auc_score': make_scorer(roc_auc_score),
             'matthews_corrcoef': make_scorer(matthews_corrcoef, greater_is_better=False)
         }
 
