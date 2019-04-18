@@ -9,7 +9,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import json
-
+import sys
 
 class DataLoad(object):
 
@@ -119,7 +119,7 @@ self = DataLoad(filepath)
 '''
 
 
-def main():
+def main(n_jobs):
     # filepath = 'data/task_1_train_features-110_sample.pickle'
     filepath = 'data/task_1_train_features.json'
     data_load = DataLoad(filepath)
@@ -128,7 +128,7 @@ def main():
 
     cross_validation = KFoldCrossValidation()
     pipeline = PandasPipeline(X)
-    learner = RandomForestRandomizedStrategy(pipeline, cross_validation, n_jobs=60)
+    learner = RandomForestRandomizedStrategy(pipeline, cross_validation, n_jobs=n_jobs)
     models = learner.fit(X, y)
 
     filepath = 'results/task1/random_forest_strategy.pickle'
@@ -140,8 +140,8 @@ def main():
 
 
 if __name__ == '__main__':
-    # args = sys.argv[1]
-    main()
+    n_jobs = sys.argv[1]
+    main(n_jobs)
     # pass
 
 
