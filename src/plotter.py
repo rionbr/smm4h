@@ -35,3 +35,10 @@ class Plotter(object):
         fig, ax = plt.subplots()
         ax.hist(mb)
         plt.show()
+
+
+import pickle
+filepath = 'results/task1/random_forest_strategy.pickle'
+with open(filepath, 'rb') as file:
+    # file = open(self.filepath, 'rb')
+    data = pickle.load(file)

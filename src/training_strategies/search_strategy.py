@@ -27,8 +27,9 @@ class GridSearchStrategy(six.with_metaclass(ABCMeta, TrainingStrategy)):
         cross_validation = self.get_cross_validation()
         pipeline = self.get_pipeline()
         params = self.get_params()
+        # TODO Use **kargs to create more flexibility
         search = GridSearchCV(estimator=pipeline, cv=cross_validation, param_grid=params, n_jobs=self.n_jobs,
-                              scoring=self.scoring, refit='f1_score')
+                              scoring=self.scoring, refit='f1_score', return_train_score=True)
         return search
 
 
@@ -45,6 +46,7 @@ class RandomizedSearchStrategy(six.with_metaclass(ABCMeta, TrainingStrategy)):
         cross_validation = self.get_cross_validation()
         pipeline = self.get_pipeline()
         params = self.get_params()
+        #TODO Use **kargs to create more flexibility
         search = RandomizedSearchCV(estimator=pipeline, cv=cross_validation, param_distributions=params,
-                                    n_jobs=self.n_jobs)
+                                    n_jobs=self.n_jobs, scoring=self.scoring, refit='f1_score', return_train_score=True)
         return search
