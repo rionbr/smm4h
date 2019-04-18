@@ -128,7 +128,7 @@ def main():
 
     cross_validation = KFoldCrossValidation()
     pipeline = PandasPipeline(X)
-    learner = RandomForestRandomizedStrategy(pipeline, cross_validation, n_jobs=8)
+    learner = RandomForestRandomizedStrategy(pipeline, cross_validation, n_jobs=30)
     models = learner.fit(X, y)
 
     filepath = 'results/task1/random_forest_strategy.pickle'
