@@ -38,7 +38,58 @@ class Plotter(object):
 
 
 import pickle
-filepath = 'results/task1/random_forest_strategy.pickle'
+filepath = 'datalink/task1/random_forest_strategy.pickle'
 with open(filepath, 'rb') as file:
     # file = open(self.filepath, 'rb')
     data = pickle.load(file)
+    results = data.cv_results_
+
+
+import matplotlib.pyplot as plt
+fig
+model = 'Random Forest '
+plt.figure(figsize=(13, 13))
+plt.title(f"{model}", fontsize=16)
+
+plt.xlabel("min_samples_split")
+plt.ylabel("Score")
+
+import maracatu as m
+
+
+def get_par_base():
+    par_base = {
+        'xvar': 'X',
+        'yvar': 'Y',
+        'title': 'Titanium Patients',
+        'xlabel': 'Date',
+
+        'alpha': 1,
+        'grid': True,
+        'fig.tight_layout': True,
+        'fig.figsize': (20, 10),
+    }
+    return par_base
+
+def plot_hist(mb, xlabel, ylabel, filepath, filename):
+    par_base = get_par_base()
+    par_base.update({
+        'file_output': f'{filepath}/{filename}',
+        'xlabel': f'{xlabel}',
+        'ylabel': f'{ylabel}'
+    })
+
+    fig, ax = plt.subplots(1, 1)
+
+    ax.hist(mb)
+
+    plt_base = m.PlotBase()
+    plt_base.configure_ax(ax, par_base)
+    plt_base.configure_fig(fig, par_base)
+
+    plt.show()
+
+scorer = 'f1_score'
+for sample, style in (('train', '--'), ('test', '-')):
+    sample_score_mean = results['mean_%s_%s' % (sample, scorer)]
+
