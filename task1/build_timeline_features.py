@@ -9,8 +9,7 @@
 import sys
 sys.path.insert(0, '../include')
 sys.path.insert(0, '../')
-from mongo_helper_functions import connectMongo, match, query, project, limit, prepareBulkUpdate, updateCollectionFromDataFrame
-import numpy as np
+from mongo_helper_functions import connectMongo, match, query, project, limit
 import pandas as pd
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 500)
@@ -18,7 +17,7 @@ pd.set_option('display.width', 1000)
 from termdictparser import Sentence
 from utils import DictionaryParser
 from sentiment.sentiment import Sentiment
-from joblib import Parallel, delayed, wrap_non_picklable_objects
+# from joblib import Parallel, delayed, wrap_non_picklable_objects
 
 
 def timeline_textual_features(text):
@@ -51,13 +50,21 @@ def timeline_features(user_id):
         dftexttimeline = dfT['tweet.full_text'].apply(timeline_textual_features)
         return dftexttimeline.sum(axis='index').astype('int').to_dict()
     else:
-        return dict
+        return dict()
 
 
 if __name__ == '__main__':
 
+    train_or_test = 'train'
+
     # Connect to Mongo
-    db = connectMongo(db_name='smm4h', host='angst.soic.indiana.edu')
+    if train_or_test == 'train':
+        db_name = 'smm4h'
+    elif train_or_test == 'test':
+        db_name = 'smm4h_final'
+
+    db_dict = connectMongo(db_name='smm4h', host='angst.soic.indiana.edu')
+    db = connectMongo(db_name=db_name, host='angst.soic.indiana.edu')
 
     # Dictionary Parsers
     print('> Loading Dictionaries')

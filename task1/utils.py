@@ -64,8 +64,10 @@ def calc_season_from_datetime(now):
     """
     Retrieved the season (for northern hemisphere) based on a datetime.
     """
-    if isinstance(now, datetime):
+    if (isinstance(now, datetime) and pd.notnull(now)):
         now = now.date()
+    else:
+        return np.nan
     now = now.replace(year=2000)
     return next(season for season, (start, end) in seasons
                 if start <= now <= end)
