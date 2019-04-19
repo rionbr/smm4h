@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e6a5df54fe7c69af9318a2784ff1c33a8a41582d0e41fbd9d2237db7025f6150"
+            "sha256": "419ced8abc7e4f132dc192fba839765c826f461b31e06901c584530576d65d6e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -120,6 +120,14 @@
                 "sha256:f923406e6b32c86309261b8195e24e18b6a8801df0cfc7814ac44017bfcb3939"
             ],
             "version": "==1.0.1"
+        },
+        "maracatu": {
+            "hashes": [
+                "sha256:106337fcf7fca935864b99facc19d880014a6680c2874d19f9af221f99b0f660",
+                "sha256:91502f94773ccdd801cff46ffcd750a30aa40570179ab978691ef112b9409a94"
+            ],
+            "index": "pypi",
+            "version": "==1.0.6"
         },
         "matplotlib": {
             "hashes": [

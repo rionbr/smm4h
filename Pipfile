@@ -10,6 +10,7 @@ pandas = "*"
 matplotlib = "*"
 sklearn = "*"
 pmlb = "*"
+maracatu = "*"
 
 [dev-packages]
 
