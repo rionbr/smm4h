@@ -131,7 +131,7 @@ def main(n_jobs):
     learner = RandomForestRandomizedStrategy(pipeline, cross_validation, n_jobs=n_jobs)
     models = learner.fit(X, y)
 
-    filepath = 'results/task1/random_forest_strategy.pickle'
+    filepath = 'results/task1/task1_train_randomforest_randomstrategy.pickle'
     with open(filepath , 'wb') as outfile:
         # outfile.write(json.dumps(models.cv_results_))
         # json.dump({'results': }, outfile)

@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import maracatu as m
-
-model = 'randomforest'
+import pickle
+import itertools as it
 # plt.figure(figsize=(13, 13))
 # plt.title(f"{model}", fontsize=16)
 
@@ -38,6 +38,7 @@ def plot_hist(mb, xlabel, ylabel, filepath, filename):
     plt_base.configure_ax(ax, par_base)
     plt_base.configure_fig(fig, par_base)
 
+
     plt.savefig(filename)
 
 def get_values(results, scorer, sample, kfold):
@@ -45,19 +46,23 @@ def get_values(results, scorer, sample, kfold):
     return np.ravel(values)
 
 kfold = 10
-sample = 'test' #train, test
-scorer = 'f1_score'
 
-path = 'datalink/task1'
+path = 'datalink/'
 path_results = f'{path}/results'
 path_plots = f'{path}/plots'
 
+task = 'task1'
+data_set = 'train'
+sample = 'test' #train, test
+scorer = ['f1_score', 'precision', 'recall', 'roc_auc_score', 'matthews_corrcoef'] #
+
 model = 'random_forest_strategy'
 
-import pickle
 with open(f'{path_results}/{model}.pickle', 'rb') as file:
     results = pickle.load(file)
 
-values = get_values(results, scorer, sample, kfold)
 
-plot_hist(values, 'F1_score (X)', 'P(X)', path_plots, f'{model}_{sample}_{scorer}.pdf')
+
+for s in scorer:
+    values = get_values(results, s, sample, kfold)
+    plot_hist(values, f'{s} (X)', 'P(X)', path_plots, f'{model}_{sample}_{s}.pdf')
